@@ -25,7 +25,8 @@ Compression=lzma
 SolidCompression=yes
 MinVersion=10.0.19041
 PrivilegesRequired=lowest
-SetupIconFile=ProjectOpenerExtension\Assets\logo.png
+; SetupIconFile requires .ico format, commenting out for now
+; SetupIconFile=ProjectOpenerExtension\Assets\StoreLogo.png
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
