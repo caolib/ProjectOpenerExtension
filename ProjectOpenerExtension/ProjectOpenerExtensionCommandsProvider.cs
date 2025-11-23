@@ -4,19 +4,31 @@
 
 using Microsoft.CommandPalette.Extensions;
 using Microsoft.CommandPalette.Extensions.Toolkit;
+using ProjectOpenerExtension.Pages;
+using ProjectOpenerExtension.Services;
 
 namespace ProjectOpenerExtension;
 
 public partial class ProjectOpenerExtensionCommandsProvider : CommandProvider
 {
     private readonly ICommandItem[] _commands;
+    private readonly DynamicSettingsManager _settingsManager;
 
     public ProjectOpenerExtensionCommandsProvider()
     {
-        DisplayName = "Local project opening tool";
+        DisplayName = "Projects";
         Icon = IconHelpers.FromRelativePath("Assets\\StoreLogo.png");
+
+        // 使用动态设置管理器
+        _settingsManager = DynamicSettingsManager.Instance;
+        Settings = _settingsManager.Settings;
+
         _commands = [
-            new CommandItem(new ProjectOpenerExtensionPage()) { Title = DisplayName },
+            new CommandItem(new ProjectOpenerExtensionPage())
+            {
+                Title = "Recent Projects",
+                Subtitle = "Browse and open recent projects from VS Code and JetBrains IDEs"
+            }
         ];
     }
 
