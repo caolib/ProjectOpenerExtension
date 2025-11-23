@@ -10,9 +10,14 @@
     <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
     <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
 
+    <!-- For MSIX packaging (keep for now, can be disabled for EXE-only) -->
     <PublishProfile>win-$(Platform).pubxml</PublishProfile>
     <EnableMsixTooling>true</EnableMsixTooling>
     <GenerateAppxPackageOnBuild>true</GenerateAppxPackageOnBuild>
+    
+    <!-- For EXE installer (WinGet publishing) -->
+    <!-- <WindowsPackageType>None</WindowsPackageType> -->
+    <!-- Uncomment above line when building EXE installer -->
     
     <!-- Package signing -->
     <PackageCertificateKeyFile>..\ProjectOpenerExtension_TemporaryKey.pfx</PackageCertificateKeyFile>

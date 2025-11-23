@@ -1,0 +1,27 @@
+PackageIdentifier: caolib.ProjectOpenerExtension
+PackageVersion: 0.0.1.0
+Platform:
+  - Windows.Desktop
+MinimumOSVersion: 10.0.19041.0
+InstallerType: inno
+Scope: user
+InstallModes:
+  - interactive
+  - silent
+InstallerSwitches:
+  Silent: /SILENT
+  SilentWithProgress: /SILENT
+UpgradeBehavior: install
+Dependencies:
+  PackageDependencies:
+  - PackageIdentifier: Microsoft.WindowsAppRuntime.1.6
+    MinimumVersion: 1.6.0
+Installers:
+  - Architecture: x64
+    InstallerUrl: https://github.com/caolib/ProjectOpenerExtension/releases/download/v0.0.1.0/ProjectOpenerExtension-Setup-0.0.1.0-x64.exe
+    InstallerSha256: YOUR_SHA256_HASH_HERE
+  - Architecture: arm64
+    InstallerUrl: https://github.com/caolib/ProjectOpenerExtension/releases/download/v0.0.1.0/ProjectOpenerExtension-Setup-0.0.1.0-arm64.exe
+    InstallerSha256: YOUR_SHA256_HASH_HERE
+ManifestType: installer
+ManifestVersion: 1.6.0

@@ -1,0 +1,41 @@
+PackageIdentifier: caolib.ProjectOpenerExtension
+PackageVersion: 0.0.1.0
+PackageLocale: en-US
+Publisher: caolib
+PublisherUrl: https://github.com/caolib
+PublisherSupportUrl: https://github.com/caolib/ProjectOpenerExtension/issues
+Author: caolib
+PackageName: Project Opener Extension
+PackageUrl: https://github.com/caolib/ProjectOpenerExtension
+License: MIT
+LicenseUrl: https://github.com/caolib/ProjectOpenerExtension/blob/main/LICENSE
+ShortDescription: PowerToys Command Palette extension for quick project access
+Description: |-
+  Project Opener Extension is a PowerToys Command Palette extension that provides quick access to recent projects from various code editors including VS Code family and JetBrains IDEs.
+  
+  Features:
+  - Quick access via Alt+Space
+  - Multi-editor support (VS Code, Cursor, Windsurf, JetBrains IDEs)
+  - JSON-based configuration
+  - Auto-detect installed editors
+  - Hot-reload configuration changes
+  - Custom icons support
+Moniker: projectopener
+Tags:
+  - windows-commandpalette-extension
+  - powertoys
+  - vscode
+  - jetbrains
+  - project-manager
+  - ide
+  - command-palette
+ReleaseNotes: |-
+  - Initial release
+  - Multi-editor support (VS Code, Cursor, Windsurf, JetBrains IDEs)
+  - JSON-based configuration at %USERPROFILE%\.config\ProjectOpenerExtension\editors.json
+  - Auto-detection of installed editors
+  - Hot-reload configuration changes
+  - Custom icons extraction from executables
+ReleaseNotesUrl: https://github.com/caolib/ProjectOpenerExtension/releases/tag/v0.0.1.0
+ManifestType: defaultLocale
+ManifestVersion: 1.6.0

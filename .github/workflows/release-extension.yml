@@ -1,0 +1,133 @@
+name: Build and Release EXE Installer
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g., 0.0.1.0)'
+        required: false
+        type: string
+      release_notes:
+        description: 'Release notes'
+        required: false
+        default: 'New release with latest updates and improvements.'
+        type: string
+
+env:
+  DISPLAY_NAME: 'Project Opener Extension'
+  EXTENSION_NAME: 'ProjectOpenerExtension'
+  GITHUB_REPO_URL: 'https://github.com/caolib/ProjectOpenerExtension'
+
+jobs:
+  build:
+    runs-on: windows-2022
+    permissions:
+      contents: write
+      actions: read
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup .NET 9
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+    
+    - name: Install Inno Setup
+      run: choco install innosetup -y --no-progress
+      shell: pwsh
+    
+    - name: Get version from project
+      id: version
+      run: |
+        if ("${{ github.event.inputs.version }}" -ne "") {
+          $version = "${{ github.event.inputs.version }}"
+        } else {
+          # Try to get version from csproj AppxPackageVersion
+          $projectFile = "${{ env.EXTENSION_NAME }}/${{ env.EXTENSION_NAME }}.csproj"
+          $xml = [xml](Get-Content $projectFile)
+          $version = $xml.Project.PropertyGroup.AppxPackageVersion | Select-Object -First 1
+          if (-not $version) { 
+            $version = "0.0.1.0"
+            Write-Host "Version not found in project file, using default: $version"
+          }
+        }
+        echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+        Write-Host "Using version: $version"
+      shell: pwsh
+    
+    - name: Build EXE installers (x64 and ARM64)
+      run: |
+        .\build-exe.ps1 -Version "${{ steps.version.outputs.VERSION }}" -Platforms @("x64", "arm64")
+      shell: pwsh
+    
+    - name: Upload x64 installer artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ env.EXTENSION_NAME }}-x64-installer
+        path: ${{ env.EXTENSION_NAME }}/bin/Release/installer/*-x64.exe
+        if-no-files-found: error
+
+    - name: Upload ARM64 installer artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ env.EXTENSION_NAME }}-arm64-installer
+        path: ${{ env.EXTENSION_NAME }}/bin/Release/installer/*-arm64.exe
+        if-no-files-found: warn
+    
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v${{ steps.version.outputs.VERSION }}
+        name: "${{ env.DISPLAY_NAME }} v${{ steps.version.outputs.VERSION }}"
+        body: |
+          ## 🎯 ${{ env.DISPLAY_NAME }} ${{ steps.version.outputs.VERSION }}
+          
+          ### What's New
+          ${{ github.event.inputs.release_notes }}
+          
+          ### 📦 Installation
+          
+          **Via WinGet (Recommended):**
+          ```powershell
+          winget install caolib.ProjectOpenerExtension
+          ```
+          
+          **Manual Installation:**
+          
+          Download the installer for your system architecture:
+          
+          - **x64 (Intel/AMD)**: `${{ env.EXTENSION_NAME }}-Setup-${{ steps.version.outputs.VERSION }}-x64.exe`
+          - **ARM64 (Windows on ARM)**: `${{ env.EXTENSION_NAME }}-Setup-${{ steps.version.outputs.VERSION }}-arm64.exe`
+          
+          1. Download the appropriate installer from the Assets section below
+          2. Run the installer
+          3. The extension will be registered and available in PowerToys Command Palette (Alt+Space)
+          
+          ### ✨ Features
+          
+          - Quick access to recent projects from VS Code and JetBrains IDEs
+          - JSON-based configuration at `%USERPROFILE%\.config\ProjectOpenerExtension\editors.json`
+          - Auto-detection of installed editors
+          - Hot-reload configuration changes
+          - Custom icons support
+          
+          ### 🔗 More Information
+          
+          - Repository: ${{ env.GITHUB_REPO_URL }}
+          - Documentation: [中文文档](https://github.com/caolib/ProjectOpenerExtension/blob/main/docs/README_zh.md) | [English](https://github.com/caolib/ProjectOpenerExtension/blob/main/README.md)
+          - Issues: ${{ env.GITHUB_REPO_URL }}/issues
+        files: ${{ env.EXTENSION_NAME }}/bin/Release/installer/*.exe
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Build summary
+      run: |
+        Write-Host "🎉 ${{ env.DISPLAY_NAME }} Release Complete!" -ForegroundColor Green
+        Write-Host "Version: ${{ steps.version.outputs.VERSION }}" -ForegroundColor Yellow
+        Write-Host "📁 Installers uploaded to GitHub Release" -ForegroundColor Green
+        Write-Host "Next step: Submit to WinGet using wingetcreate" -ForegroundColor Cyan
+      shell: pwsh
