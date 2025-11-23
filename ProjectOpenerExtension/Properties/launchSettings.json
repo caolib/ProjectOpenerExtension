@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "ProjectOpenerExtension (Package)": {
+      "commandName": "MsixPackage",
+      "doNotLaunchApp": true
+    },
+    "ProjectOpenerExtension (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
