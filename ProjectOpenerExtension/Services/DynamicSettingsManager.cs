@@ -47,19 +47,14 @@ public class DynamicSettingsManager : JsonSettingsManager
         // 加载编辑器配置
         _editors = LoadEditors();
 
-        // 添加配置文件路径显示
-        var fileExistsInfo = File.Exists(_configFilePath) ? "✓ 配置文件已存在" : "✗ 配置文件不存在";
-
-        // 获取配置文件所在目录
-        var configDirectory = Path.GetDirectoryName(_configFilePath) ?? _configFilePath;
-
-        var configPathInfo = new TextSetting(
-            Namespaced("config_path"),
-            "编辑器配置文件",
-            $"{fileExistsInfo}\n\n配置文件位置:\n{_configFilePath}\n\n提示：\n- 直接用文本编辑器打开上述文件进行编辑\n- 或在文件资源管理器中打开以下目录:\n{configDirectory}",
-            configDirectory  // 传递目录路径，点击文件夹图标会打开目录
+        // 配置说明和配置文件路径
+        var configInfo = new TextSetting(
+            Namespaced("config_info"),
+            "配置文件",
+            $"配置说明: https://github.com/caolib/ProjectOpenerExtension\n\n配置文件路径:",
+            _configFilePath
         );
-        Settings.Add(configPathInfo);
+        Settings.Add(configInfo);
 
         // 加载设置
         LoadSettings();
