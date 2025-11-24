@@ -19,6 +19,11 @@
     <!-- <WindowsPackageType>None</WindowsPackageType> -->
     <!-- Uncomment above line when building EXE installer -->
     
+    <!-- Package Identity for Microsoft Store -->
+    <AppxPackageIdentityName>caolib.ProjectOpenerExtension</AppxPackageIdentityName>
+    <AppxPackagePublisher>CN=1CAC90B8-3709-4D70-847A-683B7D151D03</AppxPackagePublisher>
+    <AppxPackageVersion>0.0.1.0</AppxPackageVersion>
+    
     <!-- Package signing -->
     <PackageCertificateKeyFile>..\ProjectOpenerExtension_TemporaryKey.pfx</PackageCertificateKeyFile>
     <PackageCertificatePassword>test123</PackageCertificatePassword>
