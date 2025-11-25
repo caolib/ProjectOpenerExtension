@@ -11,7 +11,7 @@
   <Identity
     Name="caolib.ProjectOpenerExtension"
     Publisher="CN=1CAC90B8-3709-4D70-847A-683B7D151D03"
-    Version="0.0.1.1" />
+    Version="1.0.0.0" />
 
   <Properties>
     <DisplayName>ProjectOpenerExtension</DisplayName>
@@ -74,6 +74,5 @@
   <Capabilities>
     <Capability Name="internetClient" />
     <rescap:Capability Name="runFullTrust" />
-    <rescap:Capability Name="broadFileSystemAccess" />
   </Capabilities>
 </Package>

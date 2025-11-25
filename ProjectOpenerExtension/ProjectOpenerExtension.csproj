@@ -22,13 +22,13 @@
     <!-- Package Identity for Microsoft Store -->
     <AppxPackageIdentityName>caolib.ProjectOpenerExtension</AppxPackageIdentityName>
     <AppxPackagePublisher>CN=1CAC90B8-3709-4D70-847A-683B7D151D03</AppxPackagePublisher>
-    <AppxPackageVersion>0.0.1.1</AppxPackageVersion>
+    <AppxPackageVersion>1.0.0.0</AppxPackageVersion>
     
     <!-- Package signing -->
     <PackageCertificateKeyFile>..\ProjectOpenerExtension_TemporaryKey.pfx</PackageCertificateKeyFile>
     <PackageCertificatePassword>test123</PackageCertificatePassword>
-    <!-- Use certificate from CurrentUser store by thumbprint when available (helps building on CI/dev machines) -->
-    <PackageCertificateThumbprint>96A3BD23C4EBE41DEAEECC3BDDAE995B31C56BC8</PackageCertificateThumbprint>
+    <!-- Disable thumbprint to force using PFX file -->
+    <!-- <PackageCertificateThumbprint>96A3BD23C4EBE41DEAEECC3BDDAE995B31C56BC8</PackageCertificateThumbprint> -->
   </PropertyGroup>
 
   <ItemGroup>
