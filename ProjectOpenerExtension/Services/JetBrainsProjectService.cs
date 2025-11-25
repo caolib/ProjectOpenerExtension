@@ -27,7 +27,7 @@ public class JetBrainsProjectService
     public List<ProjectInfo> GetRecentProjects()
     {
         var projects = new List<ProjectInfo>();
-        var jetbrainsEditors = _settingsService.GetEnabledEditors()
+        var jetbrainsEditors = _settingsService.GetEditorConfigs()
             .Where(e => e.Type == EditorType.IntelliJIdea && !string.IsNullOrEmpty(e.ConfigFolderPattern))
             .ToList();
 

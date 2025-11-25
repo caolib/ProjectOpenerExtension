@@ -39,29 +39,48 @@ public static class EditorDetectionService
     /// </summary>
     private static EditorDefinition? DetectVSCode()
     {
+        System.Diagnostics.Debug.WriteLine("[EditorDetection] 开始检测 VS Code...");
+
         var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
         var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+        var programFilesX86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
+        var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+
+        System.Diagnostics.Debug.WriteLine($"[EditorDetection] AppData: {appData}");
+        System.Diagnostics.Debug.WriteLine($"[EditorDetection] LocalAppData: {localAppData}");
+        System.Diagnostics.Debug.WriteLine($"[EditorDetection] ProgramFiles: {programFiles}");
+        System.Diagnostics.Debug.WriteLine($"[EditorDetection] UserProfile: {userProfile}");
 
         // 检查常见安装位置
         var possiblePaths = new[]
         {
             Path.Combine(localAppData, "Programs", "Microsoft VS Code", "Code.exe"),
             Path.Combine(programFiles, "Microsoft VS Code", "Code.exe"),
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "Microsoft VS Code", "Code.exe")
+            Path.Combine(programFilesX86, "Microsoft VS Code", "Code.exe"),
+            // User installer 路径 (多种可能)
+            Path.Combine(userProfile, "AppData", "Local", "Programs", "Microsoft VS Code", "Code.exe"),
+            Path.Combine(userProfile, "scoop", "apps", "vscode", "current", "Code.exe"),
+            // Portable 版本
+            Path.Combine(userProfile, "Downloads", "VSCode-win32-x64", "Code.exe"),
+            Path.Combine(userProfile, "VSCode", "Code.exe")
         };
 
         foreach (var path in possiblePaths)
         {
+            System.Diagnostics.Debug.WriteLine($"[EditorDetection] 检查路径: {path}");
             if (File.Exists(path))
             {
+                System.Diagnostics.Debug.WriteLine($"[EditorDetection] ✓ 找到 VS Code: {path}");
                 var storagePath = Path.Combine(appData, "Code", "User", "globalStorage", "storage.json");
+                System.Diagnostics.Debug.WriteLine($"[EditorDetection] Storage 路径: {storagePath}");
+                System.Diagnostics.Debug.WriteLine($"[EditorDetection] Storage 存在: {File.Exists(storagePath)}");
 
                 return new EditorDefinition
                 {
                     Name = "VS Code",
                     Enabled = true,
-                    Icon = "", // 可以后续添加图标路径
+                    Icon = "",
                     ExecutablePath = path,
                     ProjectPath = storagePath,
                     EditorType = "vscode"
@@ -69,9 +88,12 @@ public static class EditorDetectionService
             }
         }
 
+        System.Diagnostics.Debug.WriteLine("[EditorDetection] 未在标准路径找到 VS Code，尝试注册表...");
+
         // 尝试从注册表查找
         try
         {
+            System.Diagnostics.Debug.WriteLine("[EditorDetection] 搜索注册表...");
             using var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Uninstall");
             if (key != null)
             {
@@ -82,12 +104,16 @@ public static class EditorDetectionService
 
                     if (displayName != null && displayName.Contains("Visual Studio Code"))
                     {
+                        System.Diagnostics.Debug.WriteLine($"[EditorDetection] 找到注册表项: {displayName}");
                         var installLocation = subKey?.GetValue("InstallLocation") as string;
+                        System.Diagnostics.Debug.WriteLine($"[EditorDetection] 安装位置: {installLocation}");
+
                         if (!string.IsNullOrEmpty(installLocation))
                         {
                             var exePath = Path.Combine(installLocation, "Code.exe");
                             if (File.Exists(exePath))
                             {
+                                System.Diagnostics.Debug.WriteLine($"[EditorDetection] ✓ 从注册表找到 VS Code: {exePath}");
                                 var storagePath = Path.Combine(appData, "Code", "User", "globalStorage", "storage.json");
 
                                 return new EditorDefinition
@@ -105,11 +131,12 @@ public static class EditorDetectionService
                 }
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // 忽略注册表访问错误
+            System.Diagnostics.Debug.WriteLine($"[EditorDetection] 注册表访问错误: {ex.Message}");
         }
 
+        System.Diagnostics.Debug.WriteLine("[EditorDetection] ✗ 未检测到 VS Code");
         return null;
     }
 

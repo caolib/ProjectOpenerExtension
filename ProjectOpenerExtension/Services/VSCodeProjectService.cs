@@ -27,7 +27,7 @@ public class VSCodeProjectService
     public List<ProjectInfo> GetRecentProjects()
     {
         var projects = new List<ProjectInfo>();
-        var vscodeEditors = _settingsService.GetEnabledEditors()
+        var vscodeEditors = _settingsService.GetEditorConfigs()
             .Where(e => e.Type == EditorType.VSCode && !string.IsNullOrEmpty(e.StorageFilePath))
             .ToList();
 

@@ -6,18 +6,18 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$PackageName = "ProjectOpenerExtension_0.0.1.0_x64__8wekyb3d8bbwe"
+$PackageName = "ProjectOpenerExtension_0.0.1.1_x64__8wekyb3d8bbwe"
 $ProjectPath = "$PSScriptRoot\ProjectOpenerExtension\ProjectOpenerExtension.csproj"
-$MsixPath = "$PSScriptRoot\ProjectOpenerExtension\AppPackages\ProjectOpenerExtension_0.0.1.0_x64_Debug_Test\ProjectOpenerExtension_0.0.1.0_x64_Debug.msix"
+$MsixPath = "$PSScriptRoot\ProjectOpenerExtension\AppPackages\ProjectOpenerExtension_0.0.1.1_x64_Debug_Test\ProjectOpenerExtension_0.0.1.1_x64_Debug.msix"
 
 Write-Host "=== 🔥 热重载模式 ===" -ForegroundColor Cyan
 Write-Host ""
 
 # 1. 卸载旧版本
 Write-Host "[1/4] 卸载旧版本..." -ForegroundColor Yellow
-$package = Get-AppxPackage -Name "ProjectOpenerExtension" -ErrorAction SilentlyContinue
+$package = Get-AppxPackage | Where-Object { $_.Name -like "*ProjectOpener*" }
 if ($package) {
-    Remove-AppxPackage -Package $PackageName -ErrorAction SilentlyContinue
+    $package | Remove-AppxPackage -ErrorAction SilentlyContinue
     Write-Host "✓ 旧版本已卸载" -ForegroundColor Green
 } else {
     Write-Host "✓ 未找到旧版本" -ForegroundColor Green

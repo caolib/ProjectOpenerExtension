@@ -7,9 +7,9 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$PackageName = "ProjectOpenerExtension_0.0.1.0_x64__8wekyb3d8bbwe"
+$PackageName = "ProjectOpenerExtension_0.0.1.1_x64__8wekyb3d8bbwe"
 $ProjectPath = "$PSScriptRoot\ProjectOpenerExtension\ProjectOpenerExtension.csproj"
-$MsixPath = "$PSScriptRoot\ProjectOpenerExtension\AppPackages\ProjectOpenerExtension_0.0.1.0_x64_Debug_Test\ProjectOpenerExtension_0.0.1.0_x64_Debug.msix"
+$MsixPath = "$PSScriptRoot\ProjectOpenerExtension\AppPackages\ProjectOpenerExtension_0.0.1.1_x64_Debug_Test\ProjectOpenerExtension_0.0.1.1_x64_Debug.msix"
 
 Write-Host "=== PowerToys 扩展更新脚本 ===" -ForegroundColor Cyan
 Write-Host ""

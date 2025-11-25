@@ -15,21 +15,9 @@
 
 ## 安装
 
-### 通过 WinGet 安装（推荐）
+从微软商店下载
 
-```powershell
-winget install caolib.ProjectOpenerExtension
-```
-
-安装完成后，扩展会自动在 PowerToys 命令面板中可用。
-
-### 手动安装
-
-1. 从 [Releases](https://github.com/caolib/ProjectOpenerExtension/releases) 下载适合你系统架构的安装程序：
-   - **x64 (Intel/AMD)**: `ProjectOpenerExtension-Setup-x.x.x.x-x64.exe`
-   - **ARM64 (Windows on ARM)**: `ProjectOpenerExtension-Setup-x.x.x.x-arm64.exe`
-2. 运行安装程序
-3. 扩展会自动注册并在命令面板中可用
+![](https://github.com/microsoft/PowerToys/blob/main/doc/images/readme/StoreBadge-light.png)
 
 ## 快速开始
 
@@ -115,12 +103,31 @@ winget install caolib.ProjectOpenerExtension
 
 ## 故障排除
 
+如果遇到问题：
+
+1. **运行诊断工具**：
+   ```powershell
+   .\diagnose.ps1
+   ```
+
+2. **检查配置文件位置**：
+   - MSIX 安装: `%LOCALAPPDATA%\ProjectOpenerExtension\editors.json`
+   - 独立安装: `%USERPROFILE%\.config\ProjectOpenerExtension\editors.json`
+
+3. **查看详细指南**: [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+
+常见问题：
+- 配置文件未创建 → 运行 `diagnose.ps1` 选择选项 1
+- 项目未识别 → 检查配置文件中的编辑器路径
+- MSIX 包无法安装 → 开发时使用热重载或信任证书
+
 ### 项目没有显示
 
 1. 检查编辑器在配置文件中是否启用
 2. 验证 `ProjectPath` 路径是否正确
 3. VS Code：确保 `storage.json` 文件存在
 4. JetBrains：确保目录包含版本文件夹（如 `IntelliJIdea2024.1`）
+5. MSIX 应用：在 Windows 设置中授予文件系统访问权限
 
 ## 从源码构建
 

@@ -88,6 +88,26 @@ For development with hot-reload:
 .\hot-reload.ps1
 ```
 
+## Troubleshooting
+
+If you encounter issues:
+
+1. **Run diagnostic tool**:
+   ```powershell
+   .\diagnose.ps1
+   ```
+
+2. **Check configuration file**:
+   - MSIX: `%LOCALAPPDATA%\ProjectOpenerExtension\editors.json`
+   - Standalone: `%USERPROFILE%\.config\ProjectOpenerExtension\editors.json`
+
+3. **View detailed guide**: [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
+
+Common issues:
+- Configuration file not created → Run `diagnose.ps1` and select option 1
+- Projects not detected → Check editor paths in configuration
+- MSIX package install fails → Use hot-reload for development or trust certificate
+
 ## Contributing
 
 Issues and pull requests are welcome!

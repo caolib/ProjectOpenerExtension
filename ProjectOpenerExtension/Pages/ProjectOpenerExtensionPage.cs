@@ -34,7 +34,7 @@ internal sealed partial class ProjectOpenerExtensionPage : ListPage
         var items = new List<IListItem>();
         var editors = _settingsService.GetEditorConfigs();
 
-        // 获取 VS Code 项目（显示所有项目）
+        // Get VS Code projects
         var vscodeProjects = _vscodeService.GetRecentProjects();
         if (vscodeProjects.Count > 0)
         {
@@ -46,8 +46,7 @@ internal sealed partial class ProjectOpenerExtensionPage : ListPage
             }
         }
 
-        // 获取 JetBrains 项目
-        // 获取 JetBrains 项目（显示所有项目）
+        // Get JetBrains projects
         var jetbrainsProjects = _jetbrainsService.GetRecentProjects();
         if (jetbrainsProjects.Count > 0)
         {
@@ -61,17 +60,44 @@ internal sealed partial class ProjectOpenerExtensionPage : ListPage
 
         if (items.Count == 0)
         {
-            items.Add(new ListItem(new NoOpCommand())
+            // Check if editors are configured
+            if (editors.Count == 0)
             {
-                Title = "No recent projects found",
-                Subtitle = "Open some projects in VS Code or JetBrains IDEs to see them here"
-            });
+                items.Add(new ListItem(new NoOpCommand())
+                {
+                    Title = "First time using? Configure editors first | 首次使用?请先配置编辑器",
+                    Subtitle = "Specify the configuration file path in settings and create editors.json file | 请在设置中指定配置文件路径并创建 editors.json 文件"
+                });
+                items.Add(new ListItem(new NoOpCommand())
+                {
+                    Title = "Configuration Steps | 配置步骤",
+                    Subtitle = "1. Command Palette → Settings (bottom left) → Extensions → Project Opener Extension | 命令面板 → 设置(左下角) → 扩展 → Project Opener Extension"
+                });
+                items.Add(new ListItem(new NoOpCommand())
+                {
+                    Title = "",
+                    Subtitle = "2. Enter full path in 'Configuration File Path' (e.g., C:\\config\\editors.json) | 在「配置文件路径」中输入完整路径 (如: C:\\config\\editors.json)"
+                });
+                items.Add(new ListItem(new NoOpCommand())
+                {
+                    Title = "",
+                    Subtitle = "3. Create and edit the file, refer to configuration examples in settings | 创建并编辑该文件，参考设置页面的配置示例"
+                });
+            }
+            else
+            {
+                items.Add(new ListItem(new NoOpCommand())
+                {
+                    Title = "No recent projects found",
+                    Subtitle = "Open some projects in VS Code or JetBrains IDEs to see them here"
+                });
+            }
         }
 
         return items.ToArray();
     }
 
-    private IListItem CreateProjectListItem(ProjectInfo project, string sectionLabel, List<EditorConfig> editors)
+    private ListItem CreateProjectListItem(ProjectInfo project, string sectionLabel, List<EditorConfig> editors)
     {
         var defaultEditorId = project.AvailableEditorIds.FirstOrDefault() ?? "vscode";
         var defaultCommand = new OpenProjectCommand(project, defaultEditorId);

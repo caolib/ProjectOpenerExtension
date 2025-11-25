@@ -19,9 +19,10 @@ public class DynamicSettingsManager : JsonSettingsManager
 {
     private static DynamicSettingsManager _instance;
     private static readonly string _namespace = "projectopener";
-    private readonly string _configFilePath;
+    private string _configFilePath;
 
     private List<EditorDefinition> _editors;
+    private TextSetting _configPathSetting;
 
     public static DynamicSettingsManager Instance => _instance ??= new DynamicSettingsManager();
 
@@ -30,96 +31,167 @@ public class DynamicSettingsManager : JsonSettingsManager
     private DynamicSettingsManager()
     {
         FilePath = GetSettingsFilePath();
-        _configFilePath = GetConfigFilePath();
 
-        System.Diagnostics.Debug.WriteLine($"[ProjectOpener] 构造函数 - 初始配置文件路径: {_configFilePath}");
+        // 获取用户设置的配置文件路径（从持久化文件读取）
+        _configFilePath = GetUserConfigFilePath();
+        System.Diagnostics.Debug.WriteLine($"[ProjectOpener] 配置文件路径: {_configFilePath}");
 
-        // 初始化配置文件（如果不存在则创建）
-        InitializeConfigFile();
-
-        // 获取实际存在的配置文件路径（可能被MSIX重定向）
-        var actualConfigPath = FindActualConfigPath();
-        System.Diagnostics.Debug.WriteLine($"[ProjectOpener] 构造函数 - 实际配置文件路径: {actualConfigPath}");
-
-        // 使用实际路径
-        _configFilePath = actualConfigPath;
-
-        // 加载编辑器配置
+        // 加载编辑器配置（不自动创建）
         _editors = LoadEditors();
 
-        // 配置说明和配置文件路径
-        var configInfo = new TextSetting(
-            Namespaced("config_info"),
-            "配置文件",
-            $"配置说明: https://github.com/caolib/ProjectOpenerExtension\n\n配置文件路径:",
-            _configFilePath
+        // Add config file path setting (empty on first use)
+        _configPathSetting = new TextSetting(
+            Namespaced("config_file_path"),
+            "Configuration File Path | 配置文件路径",
+            "Specify the full path to editors.json configuration file. Create and configure this file on first use.\n指定 editors.json 配置文件的完整路径。首次使用请创建并配置此文件。\n\nFor configuration format and examples, visit:\n配置文件格式和示例请访问:\nhttps://github.com/caolib/ProjectOpenerExtension#configuration",
+            string.Empty  // Empty on first use
         );
-        Settings.Add(configInfo);
+        Settings.Add(_configPathSetting);
 
-        // 加载设置
+        // 加载设置以显示当前值
         LoadSettings();
+
+        // 监听设置变化
+        Settings.SettingsChanged += (s, e) =>
+        {
+            SaveSettings(); // 保存设置
+            var newPath = _configPathSetting.Value;
+            if (!string.IsNullOrEmpty(newPath) && newPath != _configFilePath)
+            {
+                _configFilePath = newPath;
+                _editors = LoadEditors();
+                System.Diagnostics.Debug.WriteLine($"[ProjectOpener] 配置文件路径已更新: {newPath}");
+            }
+        };
     }
 
     /// <summary>
-    /// 查找实际的配置文件路径
+    /// 获取用户设置的配置文件路径(从持久化文件读取)
     /// </summary>
-    private string FindActualConfigPath()
-    {
-        var standardPath = GetConfigFilePath();
-        System.Diagnostics.Debug.WriteLine($"[ProjectOpener] FindActualConfigPath - 标准路径: {standardPath}");
-        System.Diagnostics.Debug.WriteLine($"[ProjectOpener] FindActualConfigPath - 文件存在: {File.Exists(standardPath)}");
-
-        return standardPath;
-    }
-
-    /// <summary>
-    /// 初始化配置文件，如果不存在则创建并自动检测编辑器
-    /// </summary>
-    private void InitializeConfigFile()
+    private string GetUserConfigFilePath()
     {
         try
         {
-            // 确保目录存在
-            var directory = Path.GetDirectoryName(_configFilePath);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            var settingsFile = GetSettingsFilePath();
+            if (File.Exists(settingsFile))
             {
-                Directory.CreateDirectory(directory);
-                System.Diagnostics.Debug.WriteLine($"[ProjectOpener] 创建配置目录: {directory}");
-            }
-
-            // 如果配置文件不存在，创建并自动检测编辑器
-            if (!File.Exists(_configFilePath))
-            {
-                System.Diagnostics.Debug.WriteLine($"[ProjectOpener] 配置文件不存在，开始初始化: {_configFilePath}");
-
-                // 自动检测已安装的编辑器
-                var detectedEditors = EditorDetectionService.DetectInstalledEditors();
-                System.Diagnostics.Debug.WriteLine($"[ProjectOpener] 检测到 {detectedEditors.Count} 个编辑器");
-
-                // 如果没有检测到任何编辑器，创建空配置
-                if (detectedEditors.Count == 0)
+                var json = File.ReadAllText(settingsFile);
+                using (JsonDocument doc = JsonDocument.Parse(json))
                 {
-                    System.Diagnostics.Debug.WriteLine("[ProjectOpener] 未检测到编辑器，创建空配置文件");
+                    var root = doc.RootElement;
+                    var key = Namespaced("config_file_path");
+                    if (root.TryGetProperty(key, out JsonElement value))
+                    {
+                        var path = value.GetString();
+                        if (!string.IsNullOrEmpty(path))
+                        {
+                            return path;
+                        }
+                    }
                 }
-
-                // 保存到配置文件
-                var json = JsonSerializer.Serialize(detectedEditors, new JsonSerializerOptions
-                {
-                    WriteIndented = true
-                });
-                File.WriteAllText(_configFilePath, json);
-                System.Diagnostics.Debug.WriteLine($"[ProjectOpener] 配置文件已创建: {_configFilePath}");
-            }
-            else
-            {
-                System.Diagnostics.Debug.WriteLine($"[ProjectOpener] 配置文件已存在: {_configFilePath}");
             }
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[ProjectOpener] 初始化配置文件失败: {ex.Message}");
-            System.Diagnostics.Debug.WriteLine($"[ProjectOpener] 堆栈跟踪: {ex.StackTrace}");
+            System.Diagnostics.Debug.WriteLine($"[ProjectOpener] 读取配置路径失败: {ex.Message}");
         }
+
+        // 首次使用时返回空字符串，不提供默认路径
+        return string.Empty;
+    }
+
+    /// <summary>
+    /// 获取默认配置文件路径
+    /// </summary>
+    private string GetDefaultConfigFilePath()
+    {
+        bool isMsix = IsMsixPackage();
+
+        if (isMsix)
+        {
+            try
+            {
+                var packageFamilyName = GetPackageFamilyName();
+                if (!string.IsNullOrEmpty(packageFamilyName))
+                {
+                    var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                    return Path.Combine(
+                        localAppData,
+                        "Packages",
+                        packageFamilyName,
+                        "LocalCache",
+                        "Local",
+                        "ProjectOpenerExtension",
+                        "editors.json"
+                    );
+                }
+            }
+            catch { }
+
+            return Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "ProjectOpenerExtension",
+                "editors.json"
+            );
+        }
+        else
+        {
+            return Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                ".config",
+                "ProjectOpenerExtension",
+                "editors.json"
+            );
+        }
+    }
+
+    /// <summary>
+    /// 获取当前 MSIX 包的 PackageFamilyName
+    /// </summary>
+    private static string GetPackageFamilyName()
+    {
+        try
+        {
+            // 方法1: 环境变量
+            var pfn = Environment.GetEnvironmentVariable("PACKAGE_FAMILY_NAME");
+            if (!string.IsNullOrEmpty(pfn))
+            {
+                return pfn;
+            }
+
+            // 方法2: 从进程路径解析
+            var processPath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
+            if (!string.IsNullOrEmpty(processPath) && processPath.Contains(@"\WindowsApps\"))
+            {
+                // 路径格式: C:\Program Files\WindowsApps\{PackageFamilyName}\...
+                var parts = processPath.Split(new[] { @"\WindowsApps\" }, StringSplitOptions.None);
+                if (parts.Length > 1)
+                {
+                    var packagePath = parts[1];
+                    var packageName = packagePath.Split('\\')[0];
+                    return packageName;
+                }
+            }
+
+            // 方法3: 检查 Packages 目录下是否存在匹配的包
+            var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            var packagesDir = Path.Combine(localAppData, "Packages");
+
+            if (Directory.Exists(packagesDir))
+            {
+                var packageDirs = Directory.GetDirectories(packagesDir, "*ProjectOpenerExtension*");
+                if (packageDirs.Length > 0)
+                {
+                    return Path.GetFileName(packageDirs[0]);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[ProjectOpener] GetPackageFamilyName 失败: {ex.Message}");
+        }
+
+        return string.Empty;
     }
 
     /// <summary>
@@ -129,11 +201,17 @@ public class DynamicSettingsManager : JsonSettingsManager
     {
         try
         {
+            if (string.IsNullOrEmpty(_configFilePath))
+            {
+                System.Diagnostics.Debug.WriteLine($"[ProjectOpener] ⚠ 未设置配置文件路径");
+                return new List<EditorDefinition>();
+            }
+
             System.Diagnostics.Debug.WriteLine($"[ProjectOpener] LoadEditors: 开始加载配置文件 {_configFilePath}");
 
             if (!File.Exists(_configFilePath))
             {
-                System.Diagnostics.Debug.WriteLine($"[ProjectOpener] 配置文件不存在");
+                System.Diagnostics.Debug.WriteLine($"[ProjectOpener] ⚠ 配置文件不存在: {_configFilePath}");
                 return new List<EditorDefinition>();
             }
 
@@ -155,28 +233,6 @@ public class DynamicSettingsManager : JsonSettingsManager
             System.Diagnostics.Debug.WriteLine($"[ProjectOpener] 加载配置失败: {ex.Message}");
             System.Diagnostics.Debug.WriteLine($"[ProjectOpener] 堆栈: {ex.StackTrace}");
             return new List<EditorDefinition>();
-        }
-    }
-
-    /// <summary>
-    /// 打开配置文件
-    /// </summary>
-    private void OpenConfigFile()
-    {
-        try
-        {
-            if (File.Exists(_configFilePath))
-            {
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = _configFilePath,
-                    UseShellExecute = true
-                });
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Failed to open config file: {ex.Message}");
         }
     }
 
@@ -227,26 +283,45 @@ public class DynamicSettingsManager : JsonSettingsManager
     }
 
     /// <summary>
-    /// 获取启用的编辑器（向后兼容）
+    /// 检测是否运行在 MSIX 包中
     /// </summary>
-    public List<EditorConfig> GetEnabledEditors()
+    private static bool IsMsixPackage()
     {
-        return GetEditorConfigs();
-    }
+        try
+        {
+            // 方法1: 检查 PACKAGE_FAMILY_NAME 环境变量
+            var packageFamilyName = Environment.GetEnvironmentVariable("PACKAGE_FAMILY_NAME");
+            if (!string.IsNullOrEmpty(packageFamilyName))
+            {
+                System.Diagnostics.Debug.WriteLine($"[ProjectOpener] MSIX 检测: PACKAGE_FAMILY_NAME = {packageFamilyName}");
+                return true;
+            }
 
-    /// <summary>
-    /// 获取配置文件路径 - 使用标准用户目录，避免MSIX虚拟化
-    /// </summary>
-    private static string GetConfigFilePath()
-    {
-        // 使用 UserProfile 而不是 LocalApplicationData，避免MSIX虚拟化
-        var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        var configPath = Path.Combine(userProfile, ".config", "ProjectOpenerExtension", "editors.json");
+            // 方法2: 检查进程是否在 WindowsApps 目录下运行
+            var processPath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
+            if (!string.IsNullOrEmpty(processPath) && processPath.Contains(@"\WindowsApps\"))
+            {
+                System.Diagnostics.Debug.WriteLine($"[ProjectOpener] MSIX 检测: 进程在 WindowsApps 目录 - {processPath}");
+                return true;
+            }
 
-        System.Diagnostics.Debug.WriteLine($"[ProjectOpener] GetConfigFilePath - UserProfile: {userProfile}");
-        System.Diagnostics.Debug.WriteLine($"[ProjectOpener] GetConfigFilePath - 配置路径: {configPath}");
+            // 方法3: 检查是否存在 AppxManifest.xml
+            var appDirectory = AppDomain.CurrentDomain.BaseDirectory;
+            var manifestPath = Path.Combine(appDirectory, "AppxManifest.xml");
+            if (File.Exists(manifestPath))
+            {
+                System.Diagnostics.Debug.WriteLine($"[ProjectOpener] MSIX 检测: 找到 AppxManifest.xml");
+                return true;
+            }
 
-        return configPath;
+            System.Diagnostics.Debug.WriteLine($"[ProjectOpener] MSIX 检测: 非 MSIX 环境");
+            return false;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[ProjectOpener] MSIX 检测失败: {ex.Message}");
+            return false;
+        }
     }
 
     /// <summary>
@@ -254,8 +329,20 @@ public class DynamicSettingsManager : JsonSettingsManager
     /// </summary>
     private static string GetSettingsFilePath()
     {
-        var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        var settingsFolder = Path.Combine(userProfile, ".config", "ProjectOpenerExtension");
+        bool isMsix = IsMsixPackage();
+
+        string settingsFolder;
+        if (isMsix)
+        {
+            var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            settingsFolder = Path.Combine(localAppData, "ProjectOpenerExtension");
+        }
+        else
+        {
+            var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            settingsFolder = Path.Combine(userProfile, ".config", "ProjectOpenerExtension");
+        }
+
         Directory.CreateDirectory(settingsFolder);
         return Path.Combine(settingsFolder, "powertoys-settings.json");
     }
